@@ -1,27 +1,35 @@
 'use strict';
 
 const TeamModel = require('../models/team-model'),
+	errors = require("../middlewares/errors"),
 	tm = new TeamModel();
 
 class TeamController {
 	getAll(req, res, next) {
-		tm.getAll((docs) => {
+		return (req.session.username)
+			? tm.getAll((docs) => {
 				res.render('index', {
-					title: 'Indentation War',
+					title:'Indentation War',
+					user:req.session.username,
 					data: docs
 				});
-		});
+			})
+			: errors.http401(req, res, next)
 	}
 
 	getOne(req, res, next) {
 		let _id = req.params._id;
 
-		tm.getOne(_id, (docs) => {
+		return (req.session.username)
+			? tm.getOne(_id, (docs) => {
+				
 				res.render('edit', {
-					title: 'Editar Contacto',
-					data: docs
+					title : 'Editar Contacto',
+					user : req.session.username,
+					data : docs
 				});
-		});
+			})
+			: errors.http401(req, res, next);
 	}
 
 	save(req, res, next) {
@@ -32,25 +40,27 @@ class TeamController {
 			country: req.body.country,
 			side: req.body.side
 		};
-
-		tm.save(contacto, () => res.redirect('/') );
+		
+		return (req.session.username)
+			? tm.save( contacto, () => res.redirect('/teams') )
+			: errors.http401(req, res, next);
 	}
 
 	delete(req, res, next) {
 		let _id = req.params._id;
-		tm.delete(_id, () => res.redirect('/') );
+
+		return (req.session.username)
+			? tm.delete( _id, () => res.redirect('/teams') )
+			: errors.http401(req, res, next);
 	}
 
 	addForm(req, res, next) {
-		res.render('add', { title:'Agregar Contacto' });
-	}
-
-	error404(req, res, next) {
-		let err = new Error();
-		err.status = 404;
-		err.statusText = 'NOT FOUND';
-
-		res.render('error', {error: err});
+		return (req.session.username)
+			? res.render('add', {
+				title: 'Agregar Contacto',
+				user : req.session.username
+			})
+			: errors.http401(req, res, next);
 	}
 }
 
